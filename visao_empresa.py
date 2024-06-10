@@ -1,227 +1,52 @@
 import pandas as pd
 import plotly.express as px
 import folium
-from PIL.Image import Image
 from haversine import haversine
 import streamlit as st
 from PIL import Image
-# In[2]:
+from streamlit_folium import folium_static
 
-
+# Carregar os dados
 df = pd.read_csv('train.csv')
 
-# In[3]:
-
-
-df.head()
-
-# ##  Limpeza dos dados
-
-# In[4]:
-
-
+# Limpeza dos dados
 df1 = df.copy()
 
-# In[5]:
+# Limpeza das colunas de string
+columns_to_strip = ['ID', 'Delivery_person_ID', 'Weatherconditions', 'Road_traffic_density',
+                    'Type_of_order', 'Type_of_vehicle', 'City']
 
+for col in columns_to_strip:
+    df1[col] = df1[col].str.strip()
 
-df1.head()
-
-# In[6]:
-
-
-df1.loc[:, 'ID'] = df1.loc[:, 'ID'].str.strip()
-
-# In[7]:
-
-
-df1.loc[:, 'Delivery_person_ID'] = df1.loc[:, 'Delivery_person_ID'].str.strip()
-
-# In[8]:
-
-
-df1.loc[:, 'Weatherconditions'] = df1.loc[:, 'Weatherconditions'].str.strip()
-
-# In[9]:
-
-
-df1.loc[:, 'Road_traffic_density'] = df1.loc[:, 'Road_traffic_density'].str.strip()
-
-# In[10]:
-
-
-df1.loc[:, 'Type_of_order'] = df1.loc[:, 'Type_of_order'].str.strip()
-
-# In[11]:
-
-
-df1.loc[:, 'Type_of_vehicle'] = df1.loc[:, 'Type_of_vehicle'].str.strip()
-
-# In[12]:
-
-
-df1.loc[:, 'City'] = df1.loc[:, 'City'].str.strip()
-
-# In[13]:
-
-
+# Conversão da data
 df1['Order_Date'] = pd.to_datetime(df1['Order_Date'], format='%d-%m-%Y')
 
-# In[14]:
+# Remover linhas com valores nulos em colunas específicas
+columns_with_nulls = ['Road_traffic_density', 'Vehicle_condition', 'Type_of_order',
+                      'Type_of_vehicle', 'multiple_deliveries', 'Festival', 'City',
+                      'Time_taken(min)']
 
-
-null_counts = df1.isnull().sum()
-print(null_counts)
-
-# In[15]:
-
-
-# Lista de colunas com valores nulos a serem removidos
-columns_with_nulls = [
-    'Road_traffic_density', 'Vehicle_condition', 'Type_of_order',
-    'Type_of_vehicle', 'multiple_deliveries', 'Festival', 'City',
-    'Time_taken(min)'
-]
-
-# Remover linhas com valores nulos nas colunas especificadas
 df1_cleaned = df1.dropna(subset=columns_with_nulls)
 
-# In[16]:
-
-
-df1_cleaned.head()
-
-# In[17]:
-
-
-type(df1_cleaned.loc[0, 'Delivery_person_Age'])
-
-# In[18]:
-
-
+# Limpar e converter colunas específicas
 df1_cleaned = df1_cleaned[df1_cleaned['Delivery_person_Age'].str.strip() != 'NaN']
-
-# In[19]:
-
-
 df1_cleaned['Delivery_person_Age'] = df1_cleaned['Delivery_person_Age'].astype(int)
 
-# In[20]:
-
-
 df1_cleaned = df1_cleaned[df1_cleaned['Delivery_person_Ratings'].str.strip() != 'NaN']
-
-# In[21]:
-
-
 df1_cleaned['Delivery_person_Ratings'] = df1_cleaned['Delivery_person_Ratings'].astype(float)
 
-# In[22]:
-
-
 df1_cleaned = df1_cleaned[df1_cleaned['multiple_deliveries'].str.strip() != 'NaN']
-
-# In[23]:
-
-
 df1_cleaned['multiple_deliveries'] = df1_cleaned['multiple_deliveries'].astype(int)
 
-# In[24]:
-
-
-df1_cleaned['Order_Date'] = pd.to_datetime(df1['Order_Date'], format='%d-%m-%Y')
-
-# In[25]:
-
-
 df1_cleaned = df1_cleaned[df1_cleaned['Road_traffic_density'].str.strip() != 'NaN']
-
-# In[26]:
-
-
 df1_cleaned = df1_cleaned[df1_cleaned['City'].str.strip() != 'NaN']
-
-# In[27]:
-
-
-df1_cleaned = df1_cleaned[df1_cleaned['Road_traffic_density'].str.strip() != 'NaN']
-
-# In[28]:
-
-
 df1_cleaned = df1_cleaned[df1_cleaned['Time_taken(min)'].str.strip() != 'NaN']
-
-# In[29]:
-
-
 df1_cleaned = df1_cleaned[df1_cleaned['Festival'].str.strip() != 'NaN']
-
-# In[30]:
-
 
 df1_cleaned['Time_taken(min)'] = df1_cleaned['Time_taken(min)'].str.replace(r'\(min\) ', '', regex=True).astype(int)
 
-df_aux = df1_cleaned.groupby('Order_Date')['ID'].count().reset_index().sort_values(by='ID', ascending=False)
-
-# In[33]:
-df_aux.head()
-
-df_aux_traffic = df1_cleaned.groupby('Road_traffic_density')['ID'].count().reset_index()
-
-
-# In[44]:
-
-
-df_aux_traffic
-
-
-# In[45]:
-
-
-high_traffic_deliveries = df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'High']['ID'].values[0]
-high_traffic_deliveries
-
-
-# In[46]:
-
-
-jam_traffic_deliveries = df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'Jam']['ID'].values[0]
-jam_traffic_deliveries
-
-
-# In[47]:
-
-
-low_traffic_deliveries = df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'Low']['ID'].values[0]
-low_traffic_deliveries
-
-
-# In[48]:
-
-
-medium_traffic_deliveries = df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'Medium']['ID'].values[0]
-medium_traffic_deliveries
-
-
-# In[49]:
-
-
-# Dados para o gráfico de pizza
-labels = ['High', 'Jam', 'Low', 'Medium']
-values = [high_traffic_deliveries, jam_traffic_deliveries, low_traffic_deliveries, medium_traffic_deliveries]
-
-df_city_traffic = df1_cleaned.groupby(['City','Road_traffic_density'])['ID'].count().reset_index()
-
-
-# In[34]:
-
-
-px.bar(df_aux, x='Order_Date', y='ID')
-
-# ==========================
 # Barra Lateral
-# ==========================
-
 st.header("Company's View")
 
 image = Image.open('./cury_logo.png')
@@ -238,35 +63,83 @@ date_slider = st.sidebar.date_input(
     max_value=pd.Timestamp(2022, 4, 6),
     format="DD/MM/YYYY"
 )
-# Formatando a data para o formato DD/MM/YYYY
-formatted_date = date_slider.strftime("%d/%m/%Y")
-st.header(formatted_date)
+
+# Filtro de condições de trânsito
+traffic_options = st.sidebar.multiselect('Traffic conditions', ['Low', 'Medium', 'High', 'Jam'], default='Low')
+
+# Filtrar dados conforme a data e as condições de trânsito
+date_slider = pd.to_datetime(date_slider)
+linhas_selecionadas = df1_cleaned['Order_Date'] < date_slider
+df1_cleaned = df1_cleaned.loc[linhas_selecionadas, :]
+
+linhas_selecionadas = df1_cleaned['Road_traffic_density'].isin(traffic_options)
+df1_cleaned = df1_cleaned.loc[linhas_selecionadas, :]
+
+# Mostrar o dataframe filtrado
 st.dataframe(df1_cleaned)
 
-st.sidebar.markdown("""---""")
+# Dados auxiliares para os gráficos
+df_aux = df1_cleaned.groupby('Order_Date')['ID'].count().reset_index().sort_values(by='ID', ascending=False)
+df_aux_traffic = df1_cleaned.groupby('Road_traffic_density')['ID'].count().reset_index()
+df_city_traffic = df1_cleaned.groupby(['City', 'Road_traffic_density'])['ID'].count().reset_index()
 
-traffic_options = st.sidebar.multiselect('Traffic conditions', ['Low', 'Medium', 'High','Jam'],default='Low')
+# Adicionar verificações para garantir que os dados existem antes de acessar
+high_traffic_deliveries = df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'High']['ID'].values[0] if not df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'High']['ID'].empty else 0
+jam_traffic_deliveries = df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'Jam']['ID'].values[0] if not df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'Jam']['ID'].empty else 0
+low_traffic_deliveries = df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'Low']['ID'].values[0] if not df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'Low']['ID'].empty else 0
+medium_traffic_deliveries = df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'Medium']['ID'].values[0] if not df_aux_traffic[df_aux_traffic['Road_traffic_density'] == 'Medium']['ID'].empty else 0
 
-# ==========================
+# Dados para o gráfico de pizza
+labels = ['High', 'Jam', 'Low', 'Medium']
+values = [high_traffic_deliveries, jam_traffic_deliveries, low_traffic_deliveries, medium_traffic_deliveries]
+
 # Layout
-# ==========================
-
-
-tab1, tab2, tab3 = st.tabs(['visao gerencial', 'visao tatica', 'visao geografica'])
+tab1, tab2, tab3 = st.tabs(['Visão Gerencial', 'Visão Tática', 'Visão Geográfica'])
 
 with tab1:
     with st.container():
         st.header('Orders per day')
         fig = px.bar(df_aux, x='Order_Date', y='ID')
         st.plotly_chart(fig, use_container_width=True)
+
     with st.container():
         col1, col2 = st.columns(2)
         with col1:
             fig = px.pie(names=labels, values=values, title='Orders by traffic conditions')
-
-            # Exibir o gráfico
             st.plotly_chart(fig, use_container_width=True)
+
         with col2:
-            fig = px.scatter(df_city_traffic, x='City', y='Road_traffic_density', size='ID',title='Orders by traffic and city')
+            fig = px.scatter(df_city_traffic, x='City', y='Road_traffic_density', size='ID', title='Orders by traffic and city')
             st.plotly_chart(fig, use_container_width=True)
 
+with tab2:
+    with st.container():
+        df1_cleaned['week_of_year'] = df1_cleaned['Order_Date'].dt.strftime('%U')
+        df_aux_week = df1_cleaned.groupby('week_of_year')['ID'].count().reset_index()
+        fig = px.line(df_aux_week, x='week_of_year', y='ID')
+        st.plotly_chart(fig, use_container_width=True)
+
+    with st.container():
+        df_aux01 = df1_cleaned.loc[:, ['Delivery_person_ID', 'week_of_year']].groupby('week_of_year').nunique().reset_index()
+        df_aux02 = df1_cleaned.loc[:, ['ID', 'week_of_year']].groupby('week_of_year').count().reset_index()
+        df_aux_merge = pd.merge(df_aux02, df_aux01, how='inner')
+        df_aux_merge['average_deliver_per_ID'] = df_aux_merge['ID'] / df_aux_merge['Delivery_person_ID']
+        fig = px.line(df_aux_merge, x='week_of_year', y='average_deliver_per_ID')
+        st.plotly_chart(fig, use_container_width=True)
+
+with tab3:
+    st.header('Geographical traffic locations')
+    df_aux_grap = df1_cleaned.loc[:, ['City', 'Road_traffic_density', 'Delivery_location_latitude',
+                                      'Delivery_location_longitude']].groupby(
+        ['City', 'Road_traffic_density']).median().reset_index()
+    map = folium.Map()
+    for index, row in df_aux_grap.iterrows():
+        popup_text = f"City: {row['City']}<br>Traffic Density: {row['Road_traffic_density']}"
+        folium.Marker(
+            location=[row['Delivery_location_latitude'], row['Delivery_location_longitude']],
+            popup=popup_text,
+            icon=folium.Icon(icon='info-sign', color='blue')
+        ).add_to(map)
+
+    # Exibe o mapa
+    folium_static(map)

@@ -9,7 +9,6 @@ import plotly.express as px
 from IPython import get_ipython
 import folium
 get_ipython().system('pip install haversine')
-import folium
 from haversine import haversine
 
 
