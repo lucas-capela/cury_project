@@ -58,8 +58,8 @@ st.sidebar.markdown("""---""")
 
 date_slider = st.sidebar.date_input(
     'Select',
-    value=pd.Timestamp(2022, 2, 11),
-    min_value=pd.Timestamp(2022, 2, 11),
+    value=pd.Timestamp(2022, 2, 12),
+    min_value=pd.Timestamp(2022, 2, 12),
     max_value=pd.Timestamp(2022, 4, 6),
     format="DD/MM/YYYY"
 )
@@ -75,8 +75,6 @@ df1_cleaned = df1_cleaned.loc[linhas_selecionadas, :]
 linhas_selecionadas = df1_cleaned['Road_traffic_density'].isin(traffic_options)
 df1_cleaned = df1_cleaned.loc[linhas_selecionadas, :]
 
-# Mostrar o dataframe filtrado
-st.dataframe(df1_cleaned)
 
 # Dados auxiliares para os gráficos
 df_aux = df1_cleaned.groupby('Order_Date')['ID'].count().reset_index().sort_values(by='ID', ascending=False)
@@ -94,7 +92,7 @@ labels = ['High', 'Jam', 'Low', 'Medium']
 values = [high_traffic_deliveries, jam_traffic_deliveries, low_traffic_deliveries, medium_traffic_deliveries]
 
 # Layout
-tab1, tab2, tab3 = st.tabs(['Visão Gerencial', 'Visão Tática', 'Visão Geográfica'])
+tab1, tab2, tab3 = st.tabs(['Managerial View', 'Tactical View', 'Geographic View'])
 
 with tab1:
     with st.container():
