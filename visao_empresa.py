@@ -65,7 +65,7 @@ date_slider = st.sidebar.date_input(
 )
 
 # Filtro de condições de trânsito
-traffic_options = st.sidebar.multiselect('Traffic conditions', ['Low', 'Medium', 'High', 'Jam'], default='Low')
+traffic_options = st.sidebar.multiselect('Traffic conditions', ['Low', 'Medium', 'High', 'Jam'], default=['Low', 'Medium', 'High','Jam'])
 
 # Filtrar dados conforme a data e as condições de trânsito
 date_slider = pd.to_datetime(date_slider)
